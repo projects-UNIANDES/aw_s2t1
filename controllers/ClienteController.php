@@ -1,20 +1,20 @@
 <?php
 
-class EstudianteController
+class ClienteController
 {
     private const MENSAJES = [
-        'creado' => ['success', 'Estudiante registrado correctamente.'],
-        'actualizado' => ['success', 'Estudiante actualizado correctamente.'],
-        'eliminado' => ['success', 'Estudiante eliminado correctamente.'],
-        'noencontrado' => ['warning', 'No se encontró el estudiante solicitado.'],
+        'creado' => ['success', 'Cliente registrado correctamente.'],
+        'actualizado' => ['success', 'Cliente actualizado correctamente.'],
+        'eliminado' => ['success', 'Cliente eliminado correctamente.'],
+        'noencontrado' => ['warning', 'No se encontró el cliente solicitado.'],
         'invalido' => ['danger', 'La acción solicitada no es válida.'],
     ];
 
-    private const CARRERAS = ['Software', 'Derecho', 'Medicina', 'Contabilidad', 'Enfermería', 'Administración'];
+    private const CIUDADES = ['Quito', 'Guayaquil', 'Cuenca', 'Ambato', 'Manta', 'Loja'];
 
     public function __construct(
-        private RepositorioEstudiantes $repositorio,
-        private ValidadorEstudiantes $validador,
+        private RepositorioClientes $repositorio,
+        private ValidadorClientes $validador,
     ) {}
 
     public function listar(): void
@@ -25,19 +25,19 @@ class EstudianteController
     public function editar(): void
     {
         $id = filter_var($_GET['id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-        $estudiante = $id === false ? null : $this->repositorio->consultar($id);
+        $cliente = $id === false ? null : $this->repositorio->consultar($id);
 
-        if ($estudiante === null) {
+        if ($cliente === null) {
             $this->redirigir('noencontrado');
         }
 
         $this->mostrar([], [
-            'id' => $estudiante->id,
-            'nombre' => $estudiante->nombre,
-            'correo' => $estudiante->correo,
-            'carrera' => $estudiante->carrera,
-            'semestre' => $estudiante->semestre,
-            'activo' => $estudiante->activo,
+            'id' => $cliente->id,
+            'nombre' => $cliente->nombre,
+            'correo' => $cliente->correo,
+            'telefono' => $cliente->telefono,
+            'ciudad' => $cliente->ciudad,
+            'activo' => $cliente->activo,
         ]);
     }
 
@@ -51,7 +51,7 @@ class EstudianteController
             return;
         }
 
-        $this->repositorio->registrar($this->aEstudiante($datos, null));
+        $this->repositorio->registrar($this->aCliente($datos, null));
         $this->redirigir('creado');
     }
 
@@ -71,7 +71,7 @@ class EstudianteController
             return;
         }
 
-        $existe = $this->repositorio->actualizar($this->aEstudiante($datos, $id));
+        $existe = $this->repositorio->actualizar($this->aCliente($datos, $id));
         $this->redirigir($existe ? 'actualizado' : 'noencontrado');
     }
 
@@ -102,35 +102,35 @@ class EstudianteController
             'id' => null,
             'nombre' => trim((string) ($_POST['nombre'] ?? '')),
             'correo' => trim((string) ($_POST['correo'] ?? '')),
-            'carrera' => trim((string) ($_POST['carrera'] ?? '')),
-            'semestre' => trim((string) ($_POST['semestre'] ?? '')),
+            'telefono' => trim((string) ($_POST['telefono'] ?? '')),
+            'ciudad' => trim((string) ($_POST['ciudad'] ?? '')),
             'activo' => isset($_POST['activo']),
         ];
     }
 
     private function validar(array $datos): array
     {
-        $errores = $this->validador->validar($datos['nombre'], $datos['correo'], $datos['carrera'], $datos['semestre']);
+        $errores = $this->validador->validar($datos['nombre'], $datos['correo'], $datos['telefono'], $datos['ciudad']);
 
-        if (!in_array($datos['carrera'], self::CARRERAS, true) && $datos['carrera'] !== '') {
-            $errores[] = 'La carrera seleccionada no es válida.';
+        if (!in_array($datos['ciudad'], self::CIUDADES, true) && $datos['ciudad'] !== '') {
+            $errores[] = 'La ciudad seleccionada no es válida.';
         }
 
         return $errores;
     }
 
-    private function aEstudiante(array $datos, ?int $id): Estudiante
+    private function aCliente(array $datos, ?int $id): Cliente
     {
-        return new Estudiante($id, $datos['nombre'], $datos['correo'], $datos['carrera'], (int) $datos['semestre'], $datos['activo']);
+        return new Cliente($id, $datos['nombre'], $datos['correo'], $datos['telefono'], $datos['ciudad'], $datos['activo']);
     }
 
     private function mostrar(array $errores = [], array $datos = []): void
     {
-        $estudiantes = $this->repositorio->listar();
-        $carreras = self::CARRERAS;
+        $clientes = $this->repositorio->listar();
+        $ciudades = self::CIUDADES;
         $editando = ($datos['id'] ?? null) !== null;
         $mensaje = self::MENSAJES[$_GET['mensaje'] ?? ''] ?? null;
 
-        require __DIR__ . '/../views/estudiantes.php';
+        require __DIR__ . '/../views/clientes.php';
     }
 }
